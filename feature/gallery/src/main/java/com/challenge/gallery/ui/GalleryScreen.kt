@@ -2,8 +2,10 @@ package com.challenge.gallery.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,7 +18,10 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -44,28 +49,37 @@ import com.challenge.gallery.R
 import com.challenge.gallery.viewmodel.GalleryUiState
 import com.challenge.gallery.viewmodel.GalleryViewModel
 import com.challenge.model.entity.AlbumModel
+import java.util.Calendar
 
 
 @Composable
 fun GalleryRoute(
-    onAlbumClick: (String) -> Unit,
+    onAlbumClick: (AlbumModel) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val galleyUiState by viewModel.galleryUiState.collectAsState()
-    GalleryScreen(galleyUiState = galleyUiState, onAlbumClick = {
-
-    })
+    GalleryScreen(galleyUiState = galleyUiState, onAlbumClick = onAlbumClick)
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+
 @Composable
-fun GalleryScreen(galleyUiState: GalleryUiState, onAlbumClick: (String) -> Unit) {
+fun GalleryScreen(galleyUiState: GalleryUiState, onAlbumClick: (AlbumModel) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp),
     ) {
-        GalleryListView(galleyUiState = galleyUiState)
+        Scaffold(modifier = Modifier, topBar = {
+            TopAppBar(title = { Text("My Gallery") })
+        }, content = { paddingValues ->
+            Column(
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                GalleryListView(galleyUiState = galleyUiState, onAlbumClick = onAlbumClick)
+            }
+        })
     }
 }
 
@@ -79,11 +93,11 @@ fun EmptyView() {
     ) {}
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun GalleryListView(
-    @PreviewParameter(GalleryUiStateProvider::class) galleyUiState: GalleryUiState
+    @PreviewParameter(GalleryUiStateProvider::class) galleyUiState: GalleryUiState,
+    onAlbumClick: (AlbumModel) -> Unit = {}
 ) {
 
     when (galleyUiState) {
@@ -105,26 +119,25 @@ fun GalleryListView(
                             modifier = Modifier
                                 .padding(4.dp)
                                 .height(170.dp)
-                                .fillMaxWidth(),
+                                .fillMaxWidth()
+                                .clickable {
+                                    onAlbumClick.invoke(album)
+                                },
                         ) {
 
                             Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-
+                                modifier = Modifier.fillMaxSize()
                             ) {
 
                                 album.thumbnail?.let {
                                     Image(
-                                        modifier = Modifier
-                                            .fillMaxSize(),
+                                        modifier = Modifier.fillMaxSize(),
                                         bitmap = it.asImageBitmap(),
                                         contentDescription = "Photo",
                                         contentScale = ContentScale.FillBounds
                                     )
                                 } ?: Image(
-                                    modifier = Modifier
-                                        .fillMaxSize(),
+                                    modifier = Modifier.fillMaxSize(),
                                     painter = painterResource(id = R.drawable.ic_album_image),
                                     contentDescription = null,
                                 )
@@ -150,7 +163,6 @@ fun GalleryListView(
                                         text = album.images.size.toString()
                                     )
                                 }
-
                             }
                         }
                     }
@@ -167,7 +179,6 @@ fun GalleryListView(
     }
 
 }
-
 
 class GalleryUiStateProvider : PreviewParameterProvider<GalleryUiState> {
     override val values: Sequence<GalleryUiState> = sequenceOf(

@@ -22,7 +22,7 @@ fun ChallengeNavHost(
             onAlbumClick = navController::navigateToAlbum
         )
 
-        albumScreen()
+        albumScreen(navController = navController)
     }
 
 }

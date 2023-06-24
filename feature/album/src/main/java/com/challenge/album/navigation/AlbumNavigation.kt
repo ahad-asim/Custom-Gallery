@@ -2,31 +2,30 @@ package com.challenge.album.navigation
 
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.challenge.album.ui.AlbumScreen
+import com.challenge.model.entity.AlbumModel
 
-internal const val albumIdArg = "albumId"
-//const val albumRoute = "album_route/{$albumIdArg}"
+internal const val albumArg = "album"
+const val albumRoute = "album_route"
 
-//internal class AlbumArgs(val albumId: String) {
-//    constructor(savedStateHandle: SavedStateHandle, stringDecoder: StringDecoder) :
-//            this(stringDecoder.decodeString(checkNotNull(savedStateHandle[topicIdArg])))
-//}
-
-fun NavController.navigateToAlbum(album: String) {
-    this.navigate("album_route/$album") {
+fun NavController.navigateToAlbum(album: AlbumModel) {
+    this.currentBackStackEntry?.savedStateHandle?.apply {
+        set(albumArg, album)
+    }
+    this.navigate(albumRoute) {
         launchSingleTop = true
     }
+
 }
 
-fun NavGraphBuilder.albumScreen() {
+fun NavGraphBuilder.albumScreen(navController: NavHostController) {
     composable(
-        route = "album_route/{$albumIdArg}", arguments = listOf(
-            navArgument(albumIdArg) { type = NavType.StringType },
-        )
+        route = albumRoute
     ) {
-        AlbumScreen()
+        AlbumScreen(navController = navController)
     }
 }

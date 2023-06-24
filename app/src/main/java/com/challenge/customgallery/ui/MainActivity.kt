@@ -24,17 +24,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CustomGalleryTheme {
-
-                Scaffold(modifier = Modifier, topBar = {
-                    TopAppBar(title = { Text("My Gallery") })
-                }, content = { paddingValues ->
+                Scaffold(modifier = Modifier, content = { paddingValues ->
                     Column(
                         modifier = Modifier.padding(paddingValues)
                     ) {
                         ChallengeNavHost()
                     }
                 })
-
             }
         }
     }
