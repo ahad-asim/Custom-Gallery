@@ -3,6 +3,7 @@ package com.challenge.album.ui
 import android.media.ThumbnailUtils
 import android.os.Build
 import android.os.CancellationSignal
+import android.provider.MediaStore
 import android.util.Size
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -38,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.challenge.model.entity.AlbumModel
+import com.challenge.model.entity.MediaFileType
 import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.Q)
@@ -112,11 +114,18 @@ fun AlbumScreen(
                                             Box(
                                                 modifier = Modifier.fillMaxSize()
                                             ) {
-                                                val thumbnail = ThumbnailUtils.createImageThumbnail(
-                                                    File(mediaFile.uri),
-                                                    Size(200, 200),
-                                                    CancellationSignal()
-                                                )
+                                                val thumbnail = when (mediaFile.type) {
+                                                    is MediaFileType.Image -> ThumbnailUtils.createImageThumbnail(
+                                                        File(mediaFile.uri),
+                                                        Size(200, 200),
+                                                        CancellationSignal()
+                                                    )
+
+                                                    is MediaFileType.Video -> ThumbnailUtils.createVideoThumbnail(
+                                                        File(mediaFile.uri).absolutePath,
+                                                        MediaStore.Video.Thumbnails.MICRO_KIND
+                                                    )
+                                                }
 
                                                 thumbnail?.let {
                                                     Image(
