@@ -1,12 +1,11 @@
 package com.challenge.album.navigation
 
+import android.os.Build
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
-import androidx.navigation.NavType
 import androidx.navigation.compose.composable
-import androidx.navigation.navArgument
-import com.challenge.album.ui.AlbumScreen
+import com.challenge.album.ui.AlbumRoute
 import com.challenge.model.entity.AlbumModel
 
 internal const val albumArg = "album"
@@ -26,6 +25,8 @@ fun NavGraphBuilder.albumScreen(navController: NavHostController) {
     composable(
         route = albumRoute
     ) {
-        AlbumScreen(navController = navController)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            AlbumRoute(navController = navController)
+        }
     }
 }

@@ -14,7 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GalleryViewModel @Inject constructor(
-    val getGalleryUseCase: GetGalleryUseCase
+    getGalleryUseCase: GetGalleryUseCase
 ) : ViewModel() {
 
     val galleryUiState: StateFlow<GalleryUiState> =

@@ -10,7 +10,7 @@ import androidx.annotation.RequiresApi
 import com.challenge.device_datasource.interfaces.IDeviceDataSource
 import com.challenge.model.entity.AlbumModel
 import com.challenge.model.entity.GalleryModel
-import com.challenge.model.entity.ImageModel
+import com.challenge.model.entity.MediaFiles
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.File
@@ -41,7 +41,7 @@ class DeviceDataSource @Inject constructor(
 
         val directories = ArrayList<String>()
         val albumDirectories = ArrayList<AlbumModel>()
-        val allImagesDirectories = ArrayList<ImageModel>()
+        val allImagesDirectories = ArrayList<MediaFiles>()
 
         val contentResolver = mContext.contentResolver
         val queryUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI
@@ -62,7 +62,7 @@ class DeviceDataSource @Inject constructor(
             do {
                 if (projection.isNotEmpty()) {
                     val photoUri = cursor.getString(cursor.getColumnIndex(projection[0]))
-                    allImagesDirectories.add(ImageModel(name = photoUri, uri = photoUri))
+                    allImagesDirectories.add(MediaFiles(name = photoUri, uri = photoUri))
                     if (!directories.contains(File(photoUri).parent)) {
                         directories.add(File(photoUri).parent)
                         val file = File(photoUri)
@@ -76,13 +76,13 @@ class DeviceDataSource @Inject constructor(
                             AlbumModel(
                                 name = albumName,
                                 thumbnail = thumbnail,
-                                images = mutableListOf(ImageModel(name = photoUri, uri = photoUri))
+                                mediaFiles = mutableListOf(MediaFiles(name = photoUri, uri = photoUri))
                             )
                         )
                     } else {
 
                         albumDirectories.find { it.name == File(photoUri).parentFile.name }?.let {
-                            it.images.add(ImageModel(name = photoUri, uri = photoUri))
+                            it.mediaFiles.add(MediaFiles(name = photoUri, uri = photoUri))
                         }
                     }
                 }
@@ -97,7 +97,7 @@ class DeviceDataSource @Inject constructor(
                 0, AlbumModel(
                     name = "All Images",
                     thumbnail = thumbnail,
-                    images = allImagesDirectories
+                    mediaFiles = allImagesDirectories
                 )
             )
         }

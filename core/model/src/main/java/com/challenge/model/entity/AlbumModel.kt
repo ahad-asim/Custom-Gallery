@@ -8,6 +8,5 @@ import kotlinx.android.parcel.Parcelize
 data class AlbumModel(
     val name: String,
     var thumbnail: Bitmap? = null,
-    var images: MutableList<ImageModel> = mutableListOf(),
-    var videos: MutableList<VideoModel> = mutableListOf(),
+    var mediaFiles: MutableList<MediaFiles> = mutableListOf(),
 ) : Parcelable
