@@ -5,6 +5,7 @@ import android.database.Cursor
 import android.media.ThumbnailUtils
 import android.os.Build
 import android.os.CancellationSignal
+import android.os.Environment
 import android.provider.MediaStore
 import android.util.Size
 import androidx.annotation.RequiresApi
@@ -61,8 +62,10 @@ class DeviceDataSource @Inject constructor(
                 if (!directories.contains(File(photoUri).parent)) {
 
                     directories.add(File(photoUri).parent)
+
+
                     val file = File(photoUri)
-                    val albumName = file.parentFile.name
+                    var albumName = file.parentFile.name
                     val count = file.parentFile.listFiles().size
                     val thumbnail = ThumbnailUtils.createImageThumbnail(
                         file, Size(200, 200), CancellationSignal()

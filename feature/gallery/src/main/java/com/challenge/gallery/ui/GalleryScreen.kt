@@ -1,5 +1,6 @@
 package com.challenge.gallery.ui
 
+import android.os.Environment
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -144,7 +145,13 @@ fun GalleryListView(
                                         painter = painterResource(id = R.drawable.ic_album_image),
                                         contentDescription = null,
                                     )
-                                    Text(text = album.name)
+                                    val albumModel =
+                                        if (album.name == Environment.DIRECTORY_PICTURES) {
+                                            "Camera"
+                                        } else {
+                                            album.name
+                                        }
+                                    Text(text = albumModel)
                                     Spacer(modifier = Modifier.weight(1f))
 
                                     Text(
