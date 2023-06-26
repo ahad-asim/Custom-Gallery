@@ -1,10 +1,6 @@
 package com.challenge.album.ui
 
-import android.media.ThumbnailUtils
 import android.os.Build
-import android.os.CancellationSignal
-import android.provider.MediaStore
-import android.util.Size
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -27,41 +23,45 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.bumptech.glide.Glide
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.challenge.album.R
 import com.challenge.model.entity.AlbumModel
-import com.challenge.model.entity.MediaFileType
-import java.io.File
 
 @RequiresApi(Build.VERSION_CODES.Q)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlbumRoute(
     navController: NavHostController,
     viewModel: AlbumViewModel = hiltViewModel()
 ) {
-    viewModel.updateAlbumState(navController = navController)
-    val albumUiState by viewModel.albumUiState.collectAsState()
 
+    LaunchedEffect(true) {
+        viewModel.updateAlbumState(navController = navController)
+    }
+    val albumUiState by viewModel.albumUiState.collectAsState()
     AlbumScreen(albumUiState = albumUiState, onBackClick = {
         navController.navigateUp()
     })
-
 
 }
 
 
 @RequiresApi(Build.VERSION_CODES.Q)
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalGlideComposeApi::class)
 @Preview(showBackground = true)
 @Composable
 fun AlbumScreen(
@@ -94,10 +94,8 @@ fun AlbumScreen(
                         modifier = Modifier.padding(paddingValues)
                     ) {
                         if (albumModel?.mediaFiles?.isNotEmpty() == true) {
-                            LazyVerticalGrid(columns = GridCells.Fixed(3),
-                                contentPadding = PaddingValues(
-                                    start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
-                                ),
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(3),
                                 content = {
                                     items(it.mediaFiles.size) { index ->
 
@@ -114,31 +112,39 @@ fun AlbumScreen(
                                             Box(
                                                 modifier = Modifier.fillMaxSize()
                                             ) {
-                                                val thumbnail = when (mediaFile.type) {
-                                                    is MediaFileType.Image -> ThumbnailUtils.createImageThumbnail(
-                                                        File(mediaFile.uri),
-                                                        Size(200, 200),
-                                                        CancellationSignal()
-                                                    )
 
-                                                    is MediaFileType.Video -> ThumbnailUtils.createVideoThumbnail(
-                                                        File(mediaFile.uri).absolutePath,
-                                                        MediaStore.Video.Thumbnails.MICRO_KIND
-                                                    )
-                                                }
+                                                mediaFile.thumbnail?.let { bitmap ->
 
-                                                thumbnail?.let {
-                                                    Image(
+                                                    val requestBuilder =
+                                                        Glide.with(LocalView.current).asDrawable()
+                                                            .placeholder(R.drawable.ic_album_image)
+                                                            .load(bitmap)
+
+                                                    GlideImage(
+                                                        model = "",
+                                                        contentDescription = "thumbnail",
+                                                        contentScale = ContentScale.FillBounds,
                                                         modifier = Modifier.fillMaxSize(),
-                                                        bitmap = it.asImageBitmap(),
-                                                        contentDescription = "Photo",
-                                                        contentScale = ContentScale.FillBounds
-                                                    )
-                                                }
+                                                    ) {
+                                                        it
+                                                            .thumbnail(
+                                                                requestBuilder
+                                                            )
+                                                    }
+
+                                                } ?: Image(
+                                                    modifier = Modifier.fillMaxSize(),
+                                                    painter = painterResource(id = R.drawable.ic_album_image),
+                                                    contentDescription = null,
+                                                )
                                             }
                                         }
                                     }
-                                })
+                                },
+                                contentPadding = PaddingValues(
+                                    start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
+                                )
+                            )
                         } else {
                             //EmptyView()
                         }

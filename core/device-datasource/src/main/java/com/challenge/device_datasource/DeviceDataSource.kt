@@ -5,7 +5,6 @@ import android.database.Cursor
 import android.media.ThumbnailUtils
 import android.os.Build
 import android.os.CancellationSignal
-import android.os.Environment
 import android.provider.MediaStore
 import android.util.Size
 import androidx.annotation.RequiresApi
@@ -96,6 +95,7 @@ class DeviceDataSource @Inject constructor(
             val thumbnail = ThumbnailUtils.createImageThumbnail(
                 File(allImagesDirectories[0].uri), Size(200, 200), CancellationSignal()
             )
+
             albumDirectories.add(
                 0, AlbumModel(
                     name = "All Images",

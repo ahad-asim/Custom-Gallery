@@ -75,4 +75,6 @@ dependencies {
 
     implementation project(path: ':core:design')
     implementation project(path: ':core:model')
+
+    implementation "com.github.bumptech.glide:compose:1.0.0-alpha.3"
 }

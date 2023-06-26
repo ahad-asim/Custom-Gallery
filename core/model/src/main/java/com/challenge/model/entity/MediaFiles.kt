@@ -1,6 +1,7 @@
 package com.challenge.model.entity
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
@@ -8,6 +9,7 @@ import kotlinx.android.parcel.Parcelize
 data class MediaFiles(
     val type: MediaFileType,
     val uri: String,
+    var thumbnail: Bitmap? = null,
 ) : Parcelable
 
 
