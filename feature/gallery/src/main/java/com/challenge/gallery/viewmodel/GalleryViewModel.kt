@@ -13,10 +13,6 @@ import com.challenge.model.entity.MediaFileType
 import com.challenge.model.entity.MediaFiles
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -27,6 +23,8 @@ class GalleryViewModel @Inject constructor(
 ) : ViewModel() {
 
     var galleryUiState: MutableStateFlow<GalleryUiState> = MutableStateFlow(GalleryUiState.Loading)
+    var orientationUiState: MutableStateFlow<GalleryOrientationUiState> =
+        MutableStateFlow(GalleryOrientationUiState.Grid)
 
 //    var galleryUiState: MutableStateFlow<GalleryUiState> =
 //        getGalleryUseCase.invoke().map<List<AlbumModel>, GalleryUiState>(GalleryUiState::Success)
@@ -39,6 +37,12 @@ class GalleryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch { galleryUiState.emit(GalleryUiState.Success(getGalleryUseCase.invoke().value)) }
+    }
+
+    fun updateOrientationState(galleryOrientationUiState: GalleryOrientationUiState) {
+        viewModelScope.launch {
+            orientationUiState.emit(galleryOrientationUiState)
+        }
     }
 
     suspend fun updateGalleryThumbnails(albumModels: List<AlbumModel>): List<AlbumModel> {
@@ -77,5 +81,11 @@ sealed interface GalleryUiState {
     data class Error(val msg: String) : GalleryUiState
 
     data class Success(val albums: List<AlbumModel>) : GalleryUiState
+
+}
+
+sealed interface GalleryOrientationUiState {
+    object Grid : GalleryOrientationUiState
+    object List : GalleryOrientationUiState
 
 }

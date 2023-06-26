@@ -21,12 +21,15 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.io.File
+import java.lang.Exception
 import javax.inject.Inject
 
 @HiltViewModel
 class AlbumViewModel @Inject constructor() : ViewModel() {
 
     var albumUiState: MutableStateFlow<AlbumUiState> = MutableStateFlow(AlbumUiState.Loading)
+    var orientationUiState: MutableStateFlow<AlbumOrientationUiState> =
+        MutableStateFlow(AlbumOrientationUiState.Grid)
 
     var album: AlbumModel? = null
 
@@ -51,18 +54,28 @@ class AlbumViewModel @Inject constructor() : ViewModel() {
 
     }
 
+    fun updateOrientationState(galleryOrientationUiState : AlbumOrientationUiState) {
+        viewModelScope.launch {
+            orientationUiState.emit(galleryOrientationUiState)
+        }
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.Q)
     suspend fun updateAlbumThumbnails(mediaFiles: MutableList<MediaFiles>) {
         for (mediaFile in mediaFiles) {
-            mediaFile.thumbnail = when (mediaFile.type) {
-                is MediaFileType.Image -> ThumbnailUtils.createImageThumbnail(
-                    File(mediaFile.uri), Size(200, 200), CancellationSignal()
-                )
+            try {
+                mediaFile.thumbnail = when (mediaFile.type) {
+                    is MediaFileType.Image -> ThumbnailUtils.createImageThumbnail(
+                        File(mediaFile.uri), Size(200, 200), CancellationSignal()
+                    )
 
-                is MediaFileType.Video -> ThumbnailUtils.createVideoThumbnail(
-                    File(mediaFile.uri).absolutePath, MediaStore.Video.Thumbnails.MINI_KIND
-                )
+                    is MediaFileType.Video -> ThumbnailUtils.createVideoThumbnail(
+                        File(mediaFile.uri).absolutePath, MediaStore.Video.Thumbnails.MINI_KIND
+                    )
+                }
+            } catch (ex: Exception) {
+
             }
 
             album?.let {
@@ -85,5 +98,11 @@ sealed interface AlbumUiState {
     data class Error(val msg: String) : AlbumUiState
 
     data class Success(val albumModel: AlbumModel) : AlbumUiState
+
+}
+
+sealed interface AlbumOrientationUiState {
+    object Grid : AlbumOrientationUiState
+    object List : AlbumOrientationUiState
 
 }

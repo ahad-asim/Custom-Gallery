@@ -5,8 +5,10 @@ package com.challenge.gallery.ui
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,13 +23,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -61,13 +69,13 @@ import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.challenge.design.theme.Purple80
 import com.challenge.gallery.R
+import com.challenge.gallery.viewmodel.GalleryOrientationUiState
 import com.challenge.gallery.viewmodel.GalleryUiState
 import com.challenge.gallery.viewmodel.GalleryViewModel
 import com.challenge.model.entity.AlbumModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
-import com.google.accompanist.permissions.shouldShowRationale
 
 
 @Composable
@@ -78,6 +86,10 @@ fun GalleryRoute(
     RequiredPermission(
         onAlbumClick = onAlbumClick
     )
+
+//    GalleryScreen(
+//        onAlbumClick = onAlbumClick
+//    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -86,22 +98,62 @@ fun GalleryScreen(
     viewModel: GalleryViewModel = hiltViewModel(), onAlbumClick: (AlbumModel) -> Unit
 ) {
     val galleyUiState by viewModel.galleryUiState.collectAsState()
+    val orientationUiState by viewModel.orientationUiState.collectAsState()
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 8.dp),
     ) {
         Scaffold(modifier = Modifier, topBar = {
-            TopAppBar(title = { Text("My Gallery") })
+            TopAppBar(
+
+                title = { Text("My Gallery") },
+                actions = {
+                    when (orientationUiState) {
+                        is GalleryOrientationUiState.List -> {
+                            IconButton(onClick = {
+                                viewModel.updateOrientationState(GalleryOrientationUiState.Grid)
+                            }) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_grid),
+                                    contentDescription = null,
+                                )
+                            }
+                        }
+
+                        is GalleryOrientationUiState.Grid -> {
+                            IconButton(onClick = {
+                                viewModel.updateOrientationState(GalleryOrientationUiState.List)
+                            }) {
+                                Icon(imageVector = Icons.Outlined.List, contentDescription = "List")
+                            }
+                        }
+
+                    }
+                }
+            )
         }, content = { paddingValues ->
             Column(
                 modifier = Modifier.padding(paddingValues)
             ) {
-                GalleryListView(
-                    viewModel = viewModel,
-                    galleyUiState = galleyUiState,
-                    onAlbumClick = onAlbumClick
-                )
+                when (orientationUiState) {
+                    is GalleryOrientationUiState.Grid -> {
+                        GalleryGridView(
+                            viewModel = viewModel,
+                            galleyUiState = galleyUiState,
+                            onAlbumClick = onAlbumClick
+                        )
+                    }
+
+                    is GalleryOrientationUiState.List -> {
+                        GalleryListView(
+                            viewModel = viewModel,
+                            galleyUiState = galleyUiState,
+                            onAlbumClick = onAlbumClick
+                        )
+                    }
+                }
+
             }
         })
     }
@@ -120,7 +172,7 @@ fun EmptyView() {
 @OptIn(ExperimentalGlideComposeApi::class)
 @Preview(showBackground = true)
 @Composable
-fun GalleryListView(
+fun GalleryGridView(
     @PreviewParameter(GalleryUiStateProvider::class) galleyUiState: GalleryUiState,
     viewModel: GalleryViewModel,
     onAlbumClick: (AlbumModel) -> Unit = {}
@@ -129,9 +181,7 @@ fun GalleryListView(
     when (galleyUiState) {
         is GalleryUiState.Loading -> {
             CircularProgressIndicator(
-                modifier = Modifier.size(100.dp),
-                color = Purple80,
-                strokeWidth = 10.dp
+                modifier = Modifier.size(100.dp), color = Purple80, strokeWidth = 10.dp
             )
         }
 
@@ -228,20 +278,138 @@ fun GalleryListView(
 
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
+@Preview(showBackground = true)
+@Composable
+fun GalleryListView(
+    @PreviewParameter(GalleryUiStateProvider::class) galleyUiState: GalleryUiState,
+    viewModel: GalleryViewModel,
+    onAlbumClick: (AlbumModel) -> Unit = {}
+) {
+
+    when (galleyUiState) {
+        is GalleryUiState.Loading -> {
+            CircularProgressIndicator(
+                modifier = Modifier.size(100.dp), color = Purple80, strokeWidth = 10.dp
+            )
+        }
+
+        is GalleryUiState.Success -> {
+
+            if (galleyUiState.albums.isNotEmpty()) {
+                LaunchedEffect(true) {
+                    viewModel.updateGalleryThumbnails(galleyUiState.albums)
+                }
+                LazyColumn(
+                    content = {
+                        items(galleyUiState.albums.size) { index ->
+
+                            val album = galleyUiState.albums[index]
+
+                            Card(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .height(170.dp)
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onAlbumClick.invoke(album)
+                                    },
+                            ) {
+
+                                Box(
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+
+
+                                    album.thumbnail?.let { bitmap ->
+                                        val requestBuilder =
+                                            Glide.with(LocalView.current).asDrawable().load(bitmap)
+                                        GlideImage(
+                                            model = "",
+                                            contentDescription = "thumbnail",
+                                            contentScale = ContentScale.FillBounds,
+                                            modifier = Modifier.fillMaxSize(),
+                                        ) {
+                                            it.thumbnail(
+                                                requestBuilder
+                                            )
+                                        }
+                                    } ?: Image(
+                                        modifier = Modifier.fillMaxSize(),
+                                        painter = painterResource(id = R.drawable.ic_album_image),
+                                        contentDescription = null,
+                                    )
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .align(BottomCenter)
+                                            .background(color = Purple80),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Image(
+                                            modifier = Modifier
+                                                .wrapContentSize()
+                                                .padding(4.dp),
+                                            painter = painterResource(id = R.drawable.ic_album_image),
+                                            contentDescription = null,
+                                        )
+                                        val albumModel =
+                                            if (album.name == Environment.DIRECTORY_PICTURES) {
+                                                "Camera"
+                                            } else {
+                                                album.name
+                                            }
+                                        Text(text = albumModel)
+                                        Spacer(modifier = Modifier.weight(1f))
+
+                                        Text(
+                                            modifier = Modifier.padding(end = 5.dp),
+                                            text = album.mediaFiles.size.toString()
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }, contentPadding = PaddingValues(
+                        start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
+                    )
+                )
+            } else {
+                EmptyView()
+            }
+        }
+
+        is GalleryUiState.Error -> {
+            EmptyView()
+        }
+
+    }
+
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun RequiredPermission(
     onAlbumClick: (AlbumModel) -> Unit
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val state = rememberMultiplePermissionsState(
-        permissions = listOf(
-            Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.READ_MEDIA_VIDEO,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
+
+    val state = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        rememberMultiplePermissionsState(
+            permissions = listOf(
+                Manifest.permission.READ_MEDIA_IMAGES,
+                Manifest.permission.READ_MEDIA_VIDEO,
+            )
         )
-    )
+    } else {
+        rememberMultiplePermissionsState(
+            permissions = listOf(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+        )
+    }
     DisposableEffect(key1 = lifecycleOwner, effect = {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
@@ -256,9 +424,7 @@ fun RequiredPermission(
     })
 
     state.permissions.forEach { permissionState ->
-
         when (permissionState.permission) {
-
             Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE -> {
                 when {
                     permissionState.status.isGranted -> {

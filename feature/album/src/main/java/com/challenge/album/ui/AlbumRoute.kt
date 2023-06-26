@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.outlined.List
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +31,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -55,7 +59,7 @@ fun AlbumRoute(
         viewModel.updateAlbumState(navController = navController)
     }
     val albumUiState by viewModel.albumUiState.collectAsState()
-    AlbumScreen(albumUiState = albumUiState, onBackClick = {
+    AlbumScreen(viewModel = viewModel, albumUiState = albumUiState, onBackClick = {
         navController.navigateUp()
     })
 
@@ -68,8 +72,10 @@ fun AlbumRoute(
 @Composable
 fun AlbumScreen(
     @PreviewParameter(AlbumUiStateProvider::class) albumUiState: AlbumUiState,
+    viewModel: AlbumViewModel,
     onBackClick: () -> Unit = {},
 ) {
+    val orientationUiState by viewModel.orientationUiState.collectAsState()
     when (albumUiState) {
         is AlbumUiState.Loading -> {
             CircularProgressIndicator(
@@ -92,59 +98,153 @@ fun AlbumScreen(
                                 contentDescription = "Back"
                             )
                         }
-                    })
+                    },
+
+                        actions = {
+                            when (orientationUiState) {
+                                is AlbumOrientationUiState.List -> {
+                                    IconButton(onClick = {
+                                        viewModel.updateOrientationState(AlbumOrientationUiState.Grid)
+                                    }) {
+                                        Image(
+                                            painter = painterResource(id = R.drawable.ic_grid),
+                                            contentDescription = null,
+                                        )
+                                    }
+                                }
+
+                                is AlbumOrientationUiState.Grid -> {
+                                    IconButton(onClick = {
+                                        viewModel.updateOrientationState(AlbumOrientationUiState.List)
+                                    }) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.List,
+                                            contentDescription = "List"
+                                        )
+                                    }
+                                }
+
+                            }
+                        })
                 }, content = { paddingValues ->
                     Column(
                         modifier = Modifier.padding(paddingValues)
                     ) {
                         if (albumModel?.mediaFiles?.isNotEmpty() == true) {
-                            LazyVerticalGrid(
-                                columns = GridCells.Fixed(3), content = {
-                                    items(it.mediaFiles.size) { index ->
 
-                                        val mediaFile = it.mediaFiles[index]
 
-                                        Card(
-                                            modifier = Modifier
-                                                .padding(4.dp)
-                                                .height(110.dp)
-                                                .fillMaxWidth(), shape = RoundedCornerShape(5.dp)
-                                        ) {
+                            when (orientationUiState) {
+                                is AlbumOrientationUiState.List -> {
+                                    LazyColumn(
+                                        content = {
+                                            items(it.mediaFiles.size) { index ->
 
-                                            Box(
-                                                modifier = Modifier.fillMaxSize()
-                                            ) {
+                                                val mediaFile = it.mediaFiles[index]
 
-                                                mediaFile.thumbnail?.let { bitmap ->
+                                                Card(
+                                                    modifier = Modifier
+                                                        .padding(4.dp)
+                                                        .height(110.dp)
+                                                        .fillMaxWidth(),
+                                                    shape = RoundedCornerShape(5.dp)
+                                                ) {
 
-                                                    val requestBuilder =
-                                                        Glide.with(LocalView.current).asDrawable()
-                                                            .placeholder(R.drawable.ic_album_image)
-                                                            .load(bitmap)
-
-                                                    GlideImage(
-                                                        model = "",
-                                                        contentDescription = "thumbnail",
-                                                        contentScale = ContentScale.FillBounds,
-                                                        modifier = Modifier.fillMaxSize(),
+                                                    Box(
+                                                        modifier = Modifier.fillMaxSize()
                                                     ) {
-                                                        it.thumbnail(
-                                                            requestBuilder
+
+                                                        mediaFile.thumbnail?.let { bitmap ->
+
+                                                            val requestBuilder =
+                                                                Glide.with(LocalView.current)
+                                                                    .asDrawable()
+                                                                    .placeholder(R.drawable.ic_album_image)
+                                                                    .load(bitmap)
+
+                                                            GlideImage(
+                                                                model = "",
+                                                                contentDescription = "thumbnail",
+                                                                contentScale = ContentScale.FillBounds,
+                                                                modifier = Modifier.fillMaxSize(),
+                                                            ) {
+                                                                it.thumbnail(
+                                                                    requestBuilder
+                                                                )
+                                                            }
+
+                                                        } ?: Image(
+                                                            modifier = Modifier
+                                                                .fillMaxSize()
+                                                                .padding(25.dp),
+                                                            painter = painterResource(id = R.drawable.ic_album_image),
+                                                            colorFilter = ColorFilter.tint(Color.Gray),
+                                                            contentDescription = null,
                                                         )
                                                     }
-
-                                                } ?: Image(
-                                                    modifier = Modifier.fillMaxSize(),
-                                                    painter = painterResource(id = R.drawable.ic_album_image),
-                                                    contentDescription = null,
-                                                )
+                                                }
                                             }
-                                        }
-                                    }
-                                }, contentPadding = PaddingValues(
-                                    start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
-                                )
-                            )
+                                        }, contentPadding = PaddingValues(
+                                            start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
+                                        )
+                                    )
+                                }
+
+                                is AlbumOrientationUiState.Grid -> {
+                                    LazyVerticalGrid(
+                                        columns = GridCells.Fixed(3), content = {
+                                            items(it.mediaFiles.size) { index ->
+
+                                                val mediaFile = it.mediaFiles[index]
+
+                                                Card(
+                                                    modifier = Modifier
+                                                        .padding(4.dp)
+                                                        .height(110.dp)
+                                                        .fillMaxWidth(),
+                                                    shape = RoundedCornerShape(5.dp)
+                                                ) {
+
+                                                    Box(
+                                                        modifier = Modifier.fillMaxSize()
+                                                    ) {
+
+                                                        mediaFile.thumbnail?.let { bitmap ->
+
+                                                            val requestBuilder =
+                                                                Glide.with(LocalView.current)
+                                                                    .asDrawable()
+                                                                    .placeholder(R.drawable.ic_album_image)
+                                                                    .load(bitmap)
+
+                                                            GlideImage(
+                                                                model = "",
+                                                                contentDescription = "thumbnail",
+                                                                contentScale = ContentScale.FillBounds,
+                                                                modifier = Modifier.fillMaxSize(),
+                                                            ) {
+                                                                it.thumbnail(
+                                                                    requestBuilder
+                                                                )
+                                                            }
+
+                                                        } ?: Image(
+                                                            modifier = Modifier
+                                                                .fillMaxSize()
+                                                                .padding(25.dp),
+                                                            painter = painterResource(id = R.drawable.ic_album_image),
+                                                            colorFilter = ColorFilter.tint(Color.Gray),
+                                                            contentDescription = null,
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }, contentPadding = PaddingValues(
+                                            start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
+                                        )
+                                    )
+                                }
+                            }
+
                         } else {
                         }
                     }
