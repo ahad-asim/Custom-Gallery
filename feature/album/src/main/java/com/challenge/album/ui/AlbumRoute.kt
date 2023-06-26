@@ -10,12 +10,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,13 +42,13 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.challenge.album.R
+import com.challenge.design.theme.Purple80
 import com.challenge.model.entity.AlbumModel
 
 @RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun AlbumRoute(
-    navController: NavHostController,
-    viewModel: AlbumViewModel = hiltViewModel()
+    navController: NavHostController, viewModel: AlbumViewModel = hiltViewModel()
 ) {
 
     LaunchedEffect(true) {
@@ -69,34 +71,35 @@ fun AlbumScreen(
     onBackClick: () -> Unit = {},
 ) {
     when (albumUiState) {
-        is AlbumUiState.Loading -> {}
+        is AlbumUiState.Loading -> {
+            CircularProgressIndicator(
+                modifier = Modifier.size(100.dp), color = Purple80, strokeWidth = 10.dp
+            )
+        }
+
         is AlbumUiState.Error -> {}
         is AlbumUiState.Success -> {
             val albumModel = albumUiState?.albumModel
 
             albumModel?.let {
                 Scaffold(modifier = Modifier, topBar = {
-                    TopAppBar(title = { Text(it.name) },
-                        navigationIcon =
-                        {
-                            IconButton(onClick = {
-                                onBackClick.invoke()
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
+                    TopAppBar(title = { Text(it.name) }, navigationIcon = {
+                        IconButton(onClick = {
+                            onBackClick.invoke()
+                        }) {
+                            Icon(
+                                imageVector = Icons.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
                         }
-                    )
+                    })
                 }, content = { paddingValues ->
                     Column(
                         modifier = Modifier.padding(paddingValues)
                     ) {
                         if (albumModel?.mediaFiles?.isNotEmpty() == true) {
                             LazyVerticalGrid(
-                                columns = GridCells.Fixed(3),
-                                content = {
+                                columns = GridCells.Fixed(3), content = {
                                     items(it.mediaFiles.size) { index ->
 
                                         val mediaFile = it.mediaFiles[index]
@@ -105,8 +108,7 @@ fun AlbumScreen(
                                             modifier = Modifier
                                                 .padding(4.dp)
                                                 .height(110.dp)
-                                                .fillMaxWidth(),
-                                            shape = RoundedCornerShape(5.dp)
+                                                .fillMaxWidth(), shape = RoundedCornerShape(5.dp)
                                         ) {
 
                                             Box(
@@ -126,10 +128,9 @@ fun AlbumScreen(
                                                         contentScale = ContentScale.FillBounds,
                                                         modifier = Modifier.fillMaxSize(),
                                                     ) {
-                                                        it
-                                                            .thumbnail(
-                                                                requestBuilder
-                                                            )
+                                                        it.thumbnail(
+                                                            requestBuilder
+                                                        )
                                                     }
 
                                                 } ?: Image(
@@ -140,13 +141,11 @@ fun AlbumScreen(
                                             }
                                         }
                                     }
-                                },
-                                contentPadding = PaddingValues(
+                                }, contentPadding = PaddingValues(
                                     start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
                                 )
                             )
                         } else {
-                            //EmptyView()
                         }
                     }
                 })
