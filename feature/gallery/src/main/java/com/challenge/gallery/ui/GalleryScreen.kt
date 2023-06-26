@@ -78,6 +78,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun GalleryRoute(
     onAlbumClick: (AlbumModel) -> Unit,
