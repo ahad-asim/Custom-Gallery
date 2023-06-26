@@ -34,7 +34,7 @@ class DeviceDataSource @Inject constructor(
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    override fun getLisOfAlbums(): Flow<List<AlbumModel>> {
+    override fun getLisOfAlbums(): MutableStateFlow<List<AlbumModel>> {
         return MutableStateFlow(getDirectories(mContext = mContext))
     }
 

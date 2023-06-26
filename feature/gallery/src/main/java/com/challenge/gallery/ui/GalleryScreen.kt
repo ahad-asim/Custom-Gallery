@@ -1,6 +1,5 @@
 package com.challenge.gallery.ui
 
-import android.graphics.drawable.BitmapDrawable
 import android.os.Environment
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,13 +22,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.BottomCenter
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
@@ -38,10 +36,10 @@ import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.Glide
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
-import com.bumptech.glide.load.resource.bitmap.BitmapTransitionOptions
 import com.challenge.design.theme.Purple80
 import com.challenge.gallery.R
 import com.challenge.gallery.viewmodel.GalleryUiState
@@ -56,13 +54,17 @@ fun GalleryRoute(
     viewModel: GalleryViewModel = hiltViewModel(),
 ) {
     val galleyUiState by viewModel.galleryUiState.collectAsState()
-    GalleryScreen(galleyUiState = galleyUiState, onAlbumClick = onAlbumClick)
+    GalleryScreen(viewModel = viewModel, galleyUiState = galleyUiState, onAlbumClick = onAlbumClick)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 
 @Composable
-fun GalleryScreen(galleyUiState: GalleryUiState, onAlbumClick: (AlbumModel) -> Unit) {
+fun GalleryScreen(
+    viewModel: GalleryViewModel,
+    galleyUiState: GalleryUiState,
+    onAlbumClick: (AlbumModel) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -74,7 +76,11 @@ fun GalleryScreen(galleyUiState: GalleryUiState, onAlbumClick: (AlbumModel) -> U
             Column(
                 modifier = Modifier.padding(paddingValues)
             ) {
-                GalleryListView(galleyUiState = galleyUiState, onAlbumClick = onAlbumClick)
+                GalleryListView(
+                    viewModel = viewModel,
+                    galleyUiState = galleyUiState,
+                    onAlbumClick = onAlbumClick
+                )
             }
         })
     }
@@ -95,6 +101,7 @@ fun EmptyView() {
 @Composable
 fun GalleryListView(
     @PreviewParameter(GalleryUiStateProvider::class) galleyUiState: GalleryUiState,
+    viewModel: GalleryViewModel,
     onAlbumClick: (AlbumModel) -> Unit = {}
 ) {
 
@@ -106,78 +113,84 @@ fun GalleryListView(
         is GalleryUiState.Success -> {
 
             if (galleyUiState.albums.isNotEmpty()) {
-                LazyVerticalGrid(columns = GridCells.Fixed(2), contentPadding = PaddingValues(
-                    start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
-                ), content = {
-                    items(galleyUiState.albums.size) { index ->
+                LaunchedEffect(true) {
+                    viewModel.updateGalleryThumbnails(galleyUiState.albums)
+                }
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2), content = {
+                        items(galleyUiState.albums.size) { index ->
 
-                        val album = galleyUiState.albums[index]
+                            val album = galleyUiState.albums[index]
 
-                        Card(
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .height(170.dp)
-                                .fillMaxWidth()
-                                .clickable {
-                                    onAlbumClick.invoke(album)
-                                },
-                        ) {
-
-                            Box(
-                                modifier = Modifier.fillMaxSize()
+                            Card(
+                                modifier = Modifier
+                                    .padding(4.dp)
+                                    .height(170.dp)
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onAlbumClick.invoke(album)
+                                    },
                             ) {
 
-
-                                album.thumbnail?.let { bitmap ->
-                                    val requestBuilder =
-                                        Glide.with(LocalView.current).asDrawable().load(bitmap)
-                                    GlideImage(
-                                        model = "",
-                                        contentDescription = "thumbnail",
-                                        modifier = Modifier.fillMaxSize(),
-                                    ) {
-                                        it
-                                            .thumbnail(
-                                                requestBuilder
-                                            )
-                                    }
-                                } ?: Image(
-                                    modifier = Modifier.fillMaxSize(),
-                                    painter = painterResource(id = R.drawable.ic_album_image),
-                                    contentDescription = null,
-                                )
-                                Row(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .align(BottomCenter)
-                                        .background(color = Purple80),
-                                    verticalAlignment = Alignment.CenterVertically
+                                Box(
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
-                                    Image(
-                                        modifier = Modifier
-                                            .wrapContentSize()
-                                            .padding(4.dp),
+
+
+                                    album.thumbnail?.let { bitmap ->
+                                        val requestBuilder =
+                                            Glide.with(LocalView.current).asDrawable().load(bitmap)
+                                        GlideImage(
+                                            model = "",
+                                            contentDescription = "thumbnail",
+                                            contentScale = ContentScale.FillBounds,
+                                            modifier = Modifier.fillMaxSize(),
+                                        ) {
+                                            it
+                                                .thumbnail(
+                                                    requestBuilder
+                                                )
+                                        }
+                                    } ?: Image(
+                                        modifier = Modifier.fillMaxSize(),
                                         painter = painterResource(id = R.drawable.ic_album_image),
                                         contentDescription = null,
                                     )
-                                    val albumModel =
-                                        if (album.name == Environment.DIRECTORY_PICTURES) {
-                                            "Camera"
-                                        } else {
-                                            album.name
-                                        }
-                                    Text(text = albumModel)
-                                    Spacer(modifier = Modifier.weight(1f))
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .align(BottomCenter)
+                                            .background(color = Purple80),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Image(
+                                            modifier = Modifier
+                                                .wrapContentSize()
+                                                .padding(4.dp),
+                                            painter = painterResource(id = R.drawable.ic_album_image),
+                                            contentDescription = null,
+                                        )
+                                        val albumModel =
+                                            if (album.name == Environment.DIRECTORY_PICTURES) {
+                                                "Camera"
+                                            } else {
+                                                album.name
+                                            }
+                                        Text(text = albumModel)
+                                        Spacer(modifier = Modifier.weight(1f))
 
-                                    Text(
-                                        modifier = Modifier.padding(end = 5.dp),
-                                        text = album.mediaFiles.size.toString()
-                                    )
+                                        Text(
+                                            modifier = Modifier.padding(end = 5.dp),
+                                            text = album.mediaFiles.size.toString()
+                                        )
+                                    }
                                 }
                             }
                         }
-                    }
-                })
+                    }, contentPadding = PaddingValues(
+                        start = 12.dp, top = 16.dp, end = 12.dp, bottom = 16.dp
+                    )
+                )
             } else {
                 EmptyView()
             }
@@ -194,7 +207,7 @@ fun GalleryListView(
 class GalleryUiStateProvider : PreviewParameterProvider<GalleryUiState> {
     override val values: Sequence<GalleryUiState> = sequenceOf(
         GalleryUiState.Success(
-            listOf(
+            mutableListOf(
                 AlbumModel(name = "Album 1", thumbnail = null),
                 AlbumModel(name = "Album 2", thumbnail = null),
                 AlbumModel(name = "Album 3", thumbnail = null)

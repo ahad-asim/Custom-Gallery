@@ -5,6 +5,7 @@ import com.challenge.device_datasource.interfaces.IDeviceDataSource
 import com.challenge.model.entity.AlbumModel
 import com.challenge.model.entity.GalleryModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import javax.inject.Inject
 
 class AlbumRepository @Inject constructor(
@@ -13,6 +14,6 @@ class AlbumRepository @Inject constructor(
 
     override fun getGallery(): GalleryModel = deviceDataSource.getGallery()
 
-    override fun getListOfAlbums(): Flow<List<AlbumModel>> = deviceDataSource.getLisOfAlbums()
+    override fun getListOfAlbums(): MutableStateFlow<List<AlbumModel>> = deviceDataSource.getLisOfAlbums()
 
 }
