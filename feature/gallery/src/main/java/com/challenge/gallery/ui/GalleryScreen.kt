@@ -395,7 +395,7 @@ fun RequiredPermission(
     val lifecycleOwner = LocalLifecycleOwner.current
 
 
-    val state = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+    val state = if (Build.VERSION.SDK_INT >= 33) {
         rememberMultiplePermissionsState(
             permissions = listOf(
                 Manifest.permission.READ_MEDIA_IMAGES,
